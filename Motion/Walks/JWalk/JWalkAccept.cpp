@@ -36,6 +36,7 @@ JWalkAccept::~JWalkAccept()
 
 void JWalkAccept::doIt()
 {
+    Blackboard->Actions->add(NUData::RAnkleRoll, 0, 0, 0);
 }
 
 JWalkAccept* JWalkAccept::next()

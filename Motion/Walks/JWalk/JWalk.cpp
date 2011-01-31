@@ -71,7 +71,11 @@ JWalk::JWalk() : NUWalk(Blackboard->Sensors, Blackboard->Actions)
     
     // Initialise the leg values
     m_initial_lleg = vector<float>(Blackboard->Actions->getSize(NUActionatorsData::LLeg), 0);
+    m_initial_lleg[0] = 0.3;
+    m_initial_lleg[4] = -0.3;
     m_initial_rleg = vector<float>(Blackboard->Actions->getSize(NUActionatorsData::RLeg), 0);
+    m_initial_rleg[0] = -0.3;
+    m_initial_rleg[4] = 0.3;
     
     // Initialise the arm values
     float larm[] = {0.1, 1.57, 0.15, -1.57};
