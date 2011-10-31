@@ -21,7 +21,9 @@ ENDIF()
 
 ########## List your source files here! ############################################
 SET (YOUR_SRCS  QuietStanceProvider.cpp QuietStanceProvider.h
+                QSController.cpp QSController.h
                 QSBallisticController.cpp QSBallisticController.h
+                QSPIDController.cpp QSPIDController.h
                 QSRelax.cpp QSRelax.h
                 QSCatch.cpp QSCatch.h
                 QSDelay.h

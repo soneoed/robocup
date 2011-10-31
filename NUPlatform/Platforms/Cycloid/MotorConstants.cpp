@@ -30,7 +30,7 @@ unsigned char MotorConstants::e_UpperBodyIndexToMotorID[MOTORS_NUM_UPPER_MOTORS]
 char MotorConstants::e_MotorSigns[MOTORS_NUM_MOTORS] =                   {  1,  -1,    1,   -1,   -1,   -1,   -1,    1,   -1,    1,   -1,    1,    1,   -1,   -1,   -1,    1,    1,   -1,   -1,    1,   -1,   -1};
 unsigned short MotorConstants::e_DefaultPositions[MOTORS_NUM_MOTORS] =   {495, 651,  327,  400,  502,  343,  706,  595,  501,  442,  480,  492,  631,  538,  945,  533,  451,  528,  389,  471,   87,  480,  558};
 unsigned short MotorConstants::e_DefaultSpeeds[MOTORS_NUM_MOTORS] =      {100, 100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100}; 
-unsigned char MotorConstants::e_DefaultSlopes[MOTORS_NUM_MOTORS] =       {007, 007,  007,  007,  007,  007,  007,  007,  007,  007,  007,  005,  004,  005,  004,  005,  005,  005,  004,  005,  004,  005,  005}; 
+unsigned char MotorConstants::e_DefaultSlopes[MOTORS_NUM_MOTORS] =       {007, 007,  007,  007,  007,  007,  007,  007,  007,  007,  007,  005,  004,  005,  004,  005,  007,  005,  004,  005,  004,  005,  007}; 
 unsigned char MotorConstants::e_DefaultMargins[MOTORS_NUM_MOTORS] =      {000, 000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000}; 
 unsigned short MotorConstants::e_DefaultPunches[MOTORS_NUM_MOTORS] =     {000, 000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000,  000}; 
 

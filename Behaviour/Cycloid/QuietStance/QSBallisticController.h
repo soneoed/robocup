@@ -33,6 +33,8 @@
 #define QSBallisticController_H
 
 #include "Behaviour/BehaviourFSMState.h"
+#include "Behaviour/Cycloid/QuietStance/QSController.h"
+
 #include "Infrastructure/NUData.h"
 
 class QSDelay;
@@ -41,7 +43,7 @@ class QSCatch;
 
 #include <boost/circular_buffer.hpp>
 
-class QSBallisticController : public BehaviourFSMState
+class QSBallisticController : public BehaviourFSMState, public QSController
 {
 public:
     static const float VelocityThreshold = 0.02;    // the velocity threshold for which a catch is triggered
@@ -51,6 +53,8 @@ public:
 public:
     QSBallisticController(const NUData::id_t& joint);
     ~QSBallisticController();
+    
+    void process(NUSensorsData* data, NUActionatorsData* actions);
     
     QSRelax* getRelax() const;
     QSCatch* getCatch() const;
@@ -66,7 +70,6 @@ public:
 protected:
     void doStateCommons();
 private:
-    NUData::id_t m_joint;
     QSDelay* m_delay;
     QSRelax* m_relax;
     QSCatch* m_catch;

@@ -24,7 +24,9 @@
 #include "Infrastructure/NUBlackboard.h"
 #include "Infrastructure/NUData.h"
 #include "Infrastructure/NUActionatorsData/NUActionatorsData.h"
+
 #include "QSBallisticController.h"
+#include "QSPIDController.h"
 
 #include "debug.h"
 #include "debugverbositybehaviour.h"
@@ -36,11 +38,25 @@ QuietStanceProvider::QuietStanceProvider(Behaviour* manager) : BehaviourProvider
     #if DEBUG_BEHAVIOUR_VERBOSITY > 4
         debug << "QuietStanceProvider::QuietStanceProvider" << endl;
     #endif
-    m_lankle = new QSBallisticController(NUData::LAnklePitch);
-    m_rankle = new QSBallisticController(NUData::RAnklePitch);
-    m_lhip = new QSBallisticController(NUData::LHipPitch);
-    m_rhip = new QSBallisticController(NUData::RHipPitch);
+    //m_lankle = new QSBallisticController(NUData::LAnklePitch);
+    //m_rankle = new QSBallisticController(NUData::RAnklePitch);
+    m_lankle = new QSPIDController(NUData::LAnklePitch);
+    m_rankle = new QSPIDController(NUData::RAnklePitch);
     
+    initPosition();
+}
+
+QuietStanceProvider::~QuietStanceProvider()
+{
+    #if DEBUG_BEHAVIOUR_VERBOSITY > 0
+        debug << "QuietStanceProvider::~QuietStanceProvider" << endl;
+    #endif
+    delete m_lankle;
+    delete m_rankle;
+}
+
+void QuietStanceProvider::initPosition()
+{
     Blackboard->Actions->add(NUData::LLeg, Blackboard->Actions->CurrentTime + 3000, 0, 100);
     Blackboard->Actions->add(NUData::RLeg, Blackboard->Actions->CurrentTime + 3000, 0, 100);
     Blackboard->Actions->add(NUData::LShoulderRoll, Blackboard->Actions->CurrentTime + 3000, 0, 100);
@@ -52,29 +68,13 @@ QuietStanceProvider::QuietStanceProvider(Behaviour* manager) : BehaviourProvider
     Blackboard->Actions->add(NUData::Torso, Blackboard->Actions->CurrentTime + 3000, vector<float>(2,0), 100);
 }
 
-QuietStanceProvider::~QuietStanceProvider()
-{
-    #if DEBUG_BEHAVIOUR_VERBOSITY > 0
-        debug << "QuietStanceProvider::~QuietStanceProvider" << endl;
-    #endif
-    delete m_lankle;
-    delete m_rankle;
-    delete m_lhip;
-    delete m_rhip;
-}
-
 void QuietStanceProvider::doBehaviour()
 {
     #if DEBUG_BEHAVIOUR_VERBOSITY > 4
         debug << "QuietStanceProvider::doBehaviour" << endl;
     #endif
-    m_lankle->process(m_jobs, m_data, m_actions, m_field_objects, m_game_info, m_team_info);
-    m_rankle->process(m_jobs, m_data, m_actions, m_field_objects, m_game_info, m_team_info);
-    //m_lhip->process(m_jobs, m_data, m_actions, m_field_objects, m_game_info, m_team_info);
-    //m_rhip->process(m_jobs, m_data, m_actions, m_field_objects, m_game_info, m_team_info);
-    
-    debug << m_lankle->relaxed() << ", " << m_lankle->getPosition() << ", " << m_lankle->getVelocity() << ", " << m_lankle->getAcceleration() << ", " << m_lankle->getTargetEstimate() << ", " << m_lankle->getTorque() << ", ";
-    debug << m_rankle->relaxed() << ", " << m_rankle->getPosition() << ", " << m_rankle->getVelocity() << ", " << m_rankle->getAcceleration() << ", " << m_rankle->getTargetEstimate() << ", " << m_rankle->getTorque() << endl;
+    m_lankle->process(m_data, m_actions);
+    m_rankle->process(m_data, m_actions);
 }
  
 

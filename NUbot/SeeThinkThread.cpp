@@ -52,6 +52,11 @@
     #include "Motion/NUMotion.h"
 #endif
 
+#ifdef USE_NETWORK
+    #include "Infrastructure/GameInformation/GameInformation.h"
+    #include "Infrastructure/TeamInformation/TeamInformation.h"
+#endif
+
 #include "debug.h"
 #include "debugverbositynubot.h"
 #include "debugverbositythreading.h"
@@ -172,7 +177,9 @@ void SeeThinkThread::run()
                     prof.split("motion_jobs");
                 #endif
             #endif
-            locfile << *m_nubot->m_localisation;
+            #ifdef USE_LOCALISATION
+                locfile << *m_nubot->m_localisation;
+            #endif
             // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
             #ifdef THREAD_SEETHINK_PROFILE

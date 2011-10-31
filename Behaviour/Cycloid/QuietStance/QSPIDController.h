@@ -1,8 +1,5 @@
-/*! @file QuietStanceProvider.h
-    @brief Declaration of a quiet stance provider for the cycloid robot
- 
-    @class QuietStanceProvider
-    @brief A special behaviour for testing quiet stance controllers for the cycloid
+/*! @file QSPIDController.h
+    @brief A simple PID Controller for quiet stance
  
     @author Jason Kulk
  
@@ -22,24 +19,28 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef QUIETSTANCE_PROVIDER_H
-#define QUIETSTANCE_PROVIDER_H
+#ifndef QSPIDController_H
+#define QSPIDController_H
 
-#include "../../BehaviourProvider.h"
-class QSController;
+#include "Behaviour/Cycloid/QuietStance/QSController.h"
+#include "Infrastructure/NUData.h"
 
-class QuietStanceProvider : public BehaviourProvider
+class PIDController;
+
+#include <fstream>
+
+
+class QSPIDController : public QSController
 {
 public:
-    QuietStanceProvider(Behaviour* manager);
-    ~QuietStanceProvider();
-protected:
-    void doBehaviour();
+    QSPIDController(const NUData::id_t& joint);
+    ~QSPIDController();
+    
+    void process(NUSensorsData* data, NUActionatorsData* actions);
+    
 private:
-    void initPosition();
-private:
-    QSController* m_lankle;
-    QSController* m_rankle;
+    PIDController* m_controller;
+    std::ifstream m_gains;
 };
 
 #endif

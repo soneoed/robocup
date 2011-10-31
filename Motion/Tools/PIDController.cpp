@@ -24,6 +24,7 @@
 
 #include "PIDController.h"
 
+#include "debug.h"
 #include <cmath>
 #include <iostream>
 using namespace std;
@@ -91,22 +92,22 @@ PIDController::~PIDController()
 float PIDController::doIt(double time, float input)
 {
     m_current_time = time;
-    float dt = m_current_time - m_previous_time;
+    float dt = (m_current_time - m_previous_time)/1000.0;
     
     m_error = m_target - input;
     m_proportional = m_Kp*m_error;
     
     float output = 0;
-    if (dt < 200)
+    if (dt < 0.200)
     {	// if dt is small then the controller state is valid
         if (m_Kd != 0 and m_td != 0)
-            m_derivative = (m_Kd*(m_error - m_previous_error) + m_td*m_previous_derivative)/(m_td + m_td*dt);
+            m_derivative = (m_Kd*(m_error - m_previous_error) + m_td*m_previous_derivative)/(m_td + dt);
         else
             m_derivative = 0;
     
         float unlimitedoutput = m_proportional + m_previous_integral + m_derivative;
         output = limitOutput(unlimitedoutput);
-    
+        
         // calculate the integral term with anti-windup
         m_integral = m_integral + m_Ki*dt*m_error + m_a_constant*(output - unlimitedoutput); 
     }
@@ -131,6 +132,18 @@ float PIDController::doIt(double time, float input)
 void PIDController::set(float ptarget)
 {
     m_target = ptarget;
+}
+
+/*! @brief Set the controller's PID gains
+    @param Kp the proportional gain
+    @param Ki the integral gain
+    @param Kd the derivative gain
+*/
+void PIDController::set(float Kp, float Ki, float Kd)
+{
+    m_Kp = Kp;
+    m_Ki = Ki;
+    m_Kd = Kd;
 }
 
 float PIDController::limitOutput(float unlimitedoutput)

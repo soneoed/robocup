@@ -34,12 +34,11 @@
 #include <cmath>
 #include <numeric>
 
-QSBallisticController::QSBallisticController(const NUData::id_t& joint)
+QSBallisticController::QSBallisticController(const NUData::id_t& joint) : QSController(joint)
 {
     #if DEBUG_BEHAVIOUR_VERBOSITY > 4
         debug << "QSBallisticController::QSBallisticController" << endl;
     #endif
-    m_joint = joint;
     m_delay = new QSDelay(joint, this);
     m_relax = new QSRelax(joint, this);
     m_catch = new QSCatch(joint, this);
@@ -60,6 +59,11 @@ QSBallisticController::~QSBallisticController()
     delete m_delay;
     delete m_relax;
     delete m_catch;
+}
+
+void QSBallisticController::process(NUSensorsData* data, NUActionatorsData* actions)
+{
+    BehaviourFSMState::process(m_jobs, data, actions, m_field_objects, m_game_info, m_team_info);
 }
 
 void QSBallisticController::doStateCommons()

@@ -214,10 +214,10 @@ void NUMotion::kill()
         // check the feet are on the ground
         if (not m_data->isOnGround())
         {
-            m_actions->add(NUActionatorsData::LLeg, Platform->getTime(), legpositions, 0);
-            m_actions->add(NUActionatorsData::RLeg, Platform->getTime(), legpositions, 0);
-            m_actions->add(NUActionatorsData::LArm, Platform->getTime(), larmpositions, 0);
-            m_actions->add(NUActionatorsData::RArm, Platform->getTime(), rarmpositions, 0);
+            //m_actions->add(NUActionatorsData::LLeg, Platform->getTime(), legpositions, 0);
+            //m_actions->add(NUActionatorsData::RLeg, Platform->getTime(), legpositions, 0);
+            //m_actions->add(NUActionatorsData::LArm, Platform->getTime(), larmpositions, 0);
+            //m_actions->add(NUActionatorsData::RArm, Platform->getTime(), rarmpositions, 0);
             return;
         }
         

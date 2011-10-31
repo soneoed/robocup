@@ -34,6 +34,7 @@ public:
     ~PIDController();
     
     void set(float target);
+    void set(float Kp, float Ki, float Kd);
     float doIt(double time, float input);
     
 private:
