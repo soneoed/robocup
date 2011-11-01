@@ -96,15 +96,15 @@ void SSLVisionPort::writePacketToSensors(SSLVisionPacket* packet, NUSensorsData*
                 double currTime = sensors->CurrentTime;
                 // Position Data
                 std::vector<float> gpsData(2,0.0f);
-                gpsData[0] = packet->robots[i].location.x;
-                gpsData[1] = packet->robots[i].location.y;
+                gpsData[0] = -packet->robots[i].location.x;
+                gpsData[1] = -packet->robots[i].location.y;
                 sensors->set(NUSensorsData::Gps, currTime, gpsData);
 
                 // Orientation Data
                 float compassData;
                 float headyaw;
                 sensors->getPosition(NUSensorsData::HeadYaw, headyaw);
-                compassData = mathGeneral::normaliseAngle(packet->robots[i].heading - headyaw);           // as the marker is attached to the head, subtract the head yaw position
+                compassData = mathGeneral::normaliseAngle(3.1416 + packet->robots[i].heading - headyaw);           // as the marker is attached to the head, subtract the head yaw position
                 sensors->set(NUSensorsData::Compass, currTime, compassData);
 				
 				// Record data into file
