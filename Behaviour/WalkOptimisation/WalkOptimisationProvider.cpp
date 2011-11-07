@@ -52,10 +52,11 @@
 #include <unistd.h>
 #include <signal.h>
 
-#define USE_PGRL
-#define USE_MO
-#define USE_COST
-#define USE_STIFFNESS
+#define USE_PGRL            // set this to USE_PGRL, USE_EHCLS or USE_PSO. Define none to use the same parameters repeatedly
+#define USE_MO              // set this to use the redundant fitness functions (ie multiple objective)
+#define USE_COST            // set this to either USE_COST or USE_SPEED to use that fitness function. However, this is overruled if USE_MO is defined
+#define USE_WALKPARAMETERS  // define this to use the walk parameters
+#define USE_STIFFNESS       // define this to use the stiffness parameters
 
 WalkOptimisationProvider::WalkOptimisationProvider(Behaviour* manager) : BehaviourFSMProvider(manager)
 {
@@ -64,7 +65,7 @@ WalkOptimisationProvider::WalkOptimisationProvider(Behaviour* manager) : Behavio
     #endif
     loadId();
     loadWayPoints();
-    loadParameters("NBWalkStart");
+    loadParameters("ALWalkStart");
     initOptimiser();
 
     if (not m_optimiser)
@@ -308,10 +309,14 @@ void WalkOptimisationProvider::loadParameters(const string& name)
  */
 void WalkOptimisationProvider::initOptimiser()
 {
-	vector<Parameter> parameters = m_parameters.getAsParameters();
-	#if not defined(USE_STIFFNESS)
-		parameters.resize(parameters.size() - 6);           // remove the stiffnesses from the parameter set
-	#endif
+    vector<Parameter> parameters;
+    #if defined(USE_WALKPARAMETERS) and defined(USE_STIFFNESS)
+        parameters = m_parameters.getAsParameters();
+    #elif defined(USE_WALKPARAMETERS)
+        parameters = m_parameters.getParametersAsParameters();
+    #elif defined(USE_STIFFNESS)
+        parameters = m_parameters.getGainsAsParameters();
+    #endif
 
 	#if defined(USE_EHCLS)
 		m_optimiser = new EHCLSOptimiser(m_id + "EHCLS", parameters);

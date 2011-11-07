@@ -124,8 +124,7 @@ void NUSensors::calculateSoftSensors()
     calculateHorizon();
     calculateButtonDurations();
 
-    //m_zmp->calculate();
-
+    calculateGaitPhase();
     calculateOdometry();
     calculateCameraHeight();
     calculateFallSense();
@@ -350,6 +349,137 @@ void NUSensors::calculateFallSense()
     }
 }
 
+/*! @brief Calculates the gait phase (stance, push, swing, contact)
+    
+           0. stance: The foot is on the ground
+           1. push: transistioning from stance to swing
+           2. swing: this foot is not supporting the weight of the robot
+           3. impact: transistioning from swing back to stance
+ */
+void NUSensors::calculateGaitPhase()
+{
+    const float NOMINAL_FORCE = 23.5;
+    const int SM_STANCE = 0;
+    const int SM_PUSH = 1;
+    const int SM_SWING = 2;
+    const int SM_IMPACT = 3;
+    
+    const float STANCE_TO_PUSH = 10;
+    const float PUSH_TO_SWING = 5;
+    const float SWING_TO_IMPACT = 5;
+    const float IMPACT_TO_STANCE = 50;
+    
+    float lforce, rforce;
+    bool walkactive, onground;
+    vector<float> walkspeed(3,0);
+    int lphase, rphase;
+    
+    bool success = m_data->getForce(NUSensorsData::LFoot, lforce);
+    success &= m_data->getForce(NUSensorsData::RFoot, rforce);
+    success &= m_data->get(NUSensorsData::MotionWalkActive, walkactive);
+    success &= m_data->get(NUSensorsData::MotionWalkSpeed, walkspeed);
+    onground = m_data->isOnGround();
+    success &= m_data->getGaitPhase(NUSensorsData::LFoot, lphase);
+    success &= m_data->getGaitPhase(NUSensorsData::RFoot, rphase);
+    
+    /* I need to filter the lforce and rforce so that the mean on each foot is the same.
+        The following code looks really bad, but it is simply a cpu-light average. The ugliness stems
+        from the overflow protection
+     */
+    static double lsum = 0;
+    static double rsum = 0;
+    static int count = 0;
+    lsum += lforce;
+    rsum += rforce;
+    count++;
+    
+    float lmean = lsum/count;
+    float rmean = rsum/count;
+    if (count > 200000)
+    {
+        lsum = lmean*100000;
+        rsum = rmean*100000;
+        count = 100000;
+    }
+    
+    lforce *= NOMINAL_FORCE/lmean;
+    rforce *= NOMINAL_FORCE/rmean;
+    
+    float percentLeftFoot = 100*lforce/(lforce + rforce);
+    float percentRightFoot = 100*rforce/(lforce + rforce);
+    
+    if (success and walkactive and onground)
+    {   // if I am walking then determine what support mode I am in, based on the previous support mode and sensor feedback
+        // do the logic for the left foot
+        if (lphase == SM_STANCE)
+        {   // We can transistion to PUSH. This happens when:
+            // The weight begins to be transfered to the other foot and the other foot is in SM_STANCE or SM_IMPACT
+            if (rphase == SM_STANCE or rphase == SM_IMPACT)
+                if (percentLeftFoot < STANCE_TO_PUSH)
+                    lphase = SM_PUSH;
+        }
+        else if (lphase == SM_PUSH)
+        {   // We can transition to SM_SWING. This happens when:
+            // The weight on this foot is very low, and the other foot is in SM_STANCE
+            if (rphase == SM_STANCE)
+                if (percentLeftFoot < PUSH_TO_SWING)
+                    lphase = SM_SWING;
+        }
+        else if (lphase == SM_SWING)
+        {   // We can transition to SM_IMPACT. This happens where:
+            // The weight comes back to this foot, and the other foot is in SM_STANCE
+            if (rphase == SM_STANCE or rphase == SM_PUSH)
+                if (percentLeftFoot > SWING_TO_IMPACT)
+                    lphase = SM_IMPACT;
+        }
+        else if (lphase == SM_IMPACT)
+        {   // We can transition to SM_STANCE. This happens when:
+            // The weight is more on this foot
+            if (percentLeftFoot > IMPACT_TO_STANCE)
+                lphase = SM_STANCE;
+        }
+        
+        // do the logic for the right foot
+        if (rphase == SM_STANCE)
+        {   // We can transistion to SM_PUSH. This happens when:
+            // The weight begins to be transfered to the other foot and the other foot is in SM_STANCE or SM_IMPACT
+            if (lphase == SM_STANCE or lphase == SM_IMPACT)
+                if (percentRightFoot < STANCE_TO_PUSH)
+                    rphase = SM_PUSH;
+        }
+        else if (rphase == SM_PUSH)
+        {   // We can transition to SM_SWING. This happens when:
+            // The weight on this foot is very low, and the other foot is in SM_STANCE
+            if (lphase == SM_STANCE)
+                if (percentRightFoot < PUSH_TO_SWING)
+                    rphase = SM_SWING;
+        }
+        else if (rphase == SM_SWING)
+        {   // We can transition to SM_IMPACT. This happens where:
+            // The weight comes back to this foot, and the other foot is in SM_STANCE
+            if (lphase == SM_STANCE or lphase == SM_PUSH)
+                if (percentRightFoot > SWING_TO_IMPACT)
+                    rphase = SM_IMPACT;
+        }
+        else if (rphase == SM_IMPACT)
+        {   // We can transition to SM_STANCE. This happens when:
+            // The weight is more on this foot
+            if (percentRightFoot > IMPACT_TO_STANCE)
+                rphase = SM_STANCE;
+        }
+    }
+    else
+    {
+        lphase = SM_STANCE;
+        rphase = SM_STANCE;
+    }
+    
+    vector<float> phases(2,0);
+    phases[0] = lphase;
+    phases[1] = rphase;
+    m_data->set(NUSensorsData::GaitPhase, m_current_time, phases);
+}
+
 void NUSensors::calculateOdometry()
 {
 #if DEBUG_NUSENSORS_VERBOSITY > 4
@@ -391,9 +521,9 @@ void NUSensors::calculateOdometry()
     odometeryData[1] += deltaY;
     odometeryData[2] += deltaTheta;
 
-#if DEBUG_NUSENSORS_VERBOSITY > 4
-    debug << "Odometry This Frame: (" << deltaX << "," << deltaY << "," << deltaTheta << ")" << endl;
-#endif        
+    #if DEBUG_NUSENSORS_VERBOSITY > 4
+        debug << "Odometry This Frame: (" << deltaX << "," << deltaY << "," << deltaTheta << ")" << endl;
+    #endif        
     m_data->set(NUSensorsData::Odometry,m_data->GetTimestamp(),odometeryData);
     return;
 }

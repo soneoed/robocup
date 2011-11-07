@@ -44,6 +44,7 @@ const NUSensorsData::id_t NUSensorsData::CameraTransform(s_curr_id++, "CameraTra
 const NUSensorsData::id_t NUSensorsData::CameraToGroundTransform(s_curr_id++, "CameraToGroundTransform", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::CameraHeight(s_curr_id++, "CameraHeight", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::Odometry(s_curr_id++, "Odometry", NUSensorsData::m_ids);
+const NUSensorsData::id_t NUSensorsData::GaitPhase(s_curr_id++, "GaitPhase", NUSensorsData::m_ids);
 // balance sensors
 const NUSensorsData::id_t NUSensorsData::Accelerometer(s_curr_id++, "Accelerometer", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::Gyro(s_curr_id++, "Gyro", NUSensorsData::m_ids);
@@ -80,6 +81,7 @@ const NUSensorsData::id_t NUSensorsData::MotionGetupActive(s_curr_id++, "MotionG
 const NUSensorsData::id_t NUSensorsData::MotionKickActive(s_curr_id++, "MotionKickActive", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::MotionSaveActive(s_curr_id++, "MotionSaveActive", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::MotionScriptActive(s_curr_id++, "MotionScriptActive", NUSensorsData::m_ids);
+const NUSensorsData::id_t NUSensorsData::MotionWalkActive(s_curr_id++, "MotionWalkActive", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::MotionWalkSpeed(s_curr_id++, "MotionWalkSpeed", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::MotionWalkMaxSpeed(s_curr_id++, "MotionWalkMaxSpeed", NUSensorsData::m_ids);
 const NUSensorsData::id_t NUSensorsData::MotionHeadCompletionTime(s_curr_id++, "MotionHeadCompletionTime", NUSensorsData::m_ids);
@@ -409,6 +411,32 @@ bool NUSensorsData::getOdometry(vector<float>& data)
     else
         return false;
 }
+
+/*! @brief Gets the gait phase of the given leg/end effector
+    @param id the id of either the left or right leg
+    @param data will be updated with the current phase for that leg (stance, push, swing, contact)
+    @return true if valid, false if invalid
+ */
+bool NUSensorsData::getGaitPhase(const id_t& id, int& data)
+{
+    vector<float> phases;
+    if (get(GaitPhase, phases))
+    {
+        // as usual with things like this the left phase is stored first, then the right phase
+        id_t e_id = id;
+        if (id == LLeg or id == LFoot or id == LLegEndEffector)
+        {
+            data = static_cast<int>(phases[0]);
+        }
+        else if (id == RLeg or id == RFoot or id == RLegEndEffector)
+        {
+            data = static_cast<int>(phases[1]);
+        }
+        return true;
+    }
+    return false;
+}
+
 
 /******************************************************************************************************************************************
                                                                                                         Get Methods For Balance Information

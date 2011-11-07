@@ -102,7 +102,7 @@ public:
             m_time_not_getting_up += m_data->CurrentTime - m_data->PreviousTime;
 
         lookAtGoals();
-        vector<float> speed = BehaviourPotentials::goToFieldState(m_field_objects->self, m_current_target_state, 0, 2*m_parent->stoppingDistance(), 9000);
+        vector<float> speed = BehaviourPotentials::goToFieldState(m_field_objects->self, m_current_target_state, 0, 4*m_parent->stoppingDistance(), 9000);
         m_jobs->addMotionJob(new WalkJob(speed[0], speed[1], speed[2]));
 		#if DEBUG_BEHAVIOUR_VERBOSITY > 4
             debug << "GenerateWalkParametersState::doState() - Completed." << endl;

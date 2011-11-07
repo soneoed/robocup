@@ -51,6 +51,7 @@ public:
     const static id_t CameraToGroundTransform;          // internal use only
     const static id_t CameraHeight;
     const static id_t Odometry;
+    const static id_t GaitPhase;            
     // balance sensors
     const static id_t Accelerometer;
     const static id_t Gyro;                             // raw gyro readings
@@ -87,6 +88,7 @@ public:
     const static id_t MotionKickActive;
     const static id_t MotionSaveActive;
     const static id_t MotionScriptActive;
+    const static id_t MotionWalkActive;
     const static id_t MotionWalkSpeed;
     const static id_t MotionWalkMaxSpeed;
     const static id_t MotionHeadCompletionTime;
@@ -163,6 +165,7 @@ public:
     bool getCameraHeight(float& data);
     bool getHorizon(vector<float>& data);
     bool getOdometry(vector<float>& data);
+    bool getGaitPhase(const id_t& id, int& data);
     
     // Get methods for balance information
     bool getAccelerometer(vector<float>& data);

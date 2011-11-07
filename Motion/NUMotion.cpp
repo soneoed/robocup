@@ -618,12 +618,14 @@ void NUMotion::updateMotionSensors()
         m_data->set(NUSensorsData::MotionScriptActive, m_current_time, false);
     #endif
     #ifdef USE_WALK
+        m_data->set(NUSensorsData::MotionWalkActive, m_current_time, m_walk->isActive());
         vector<float> speed;
         m_walk->getCurrentSpeed(speed);
         m_data->set(NUSensorsData::MotionWalkSpeed, m_current_time, speed);
         m_walk->getMaximumSpeed(speed);
         m_data->set(NUSensorsData::MotionWalkMaxSpeed, m_current_time, speed);
     #else
+        m_data->set(NUSensorsData::MotionWalkActive, m_current_time, false);
         m_data->set(NUSensorsData::MotionWalkSpeed, m_current_time, vector<float> (3,0));
         m_data->set(NUSensorsData::MotionWalkMaxSpeed, m_current_time, vector<float> (3, 0.1));
     #endif

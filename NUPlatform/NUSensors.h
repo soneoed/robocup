@@ -66,6 +66,7 @@ protected:
     void calculateZMP();
     void calculateFallSense();
     void calculateOdometry();
+    void calculateGaitPhase();
     void calculateCameraHeight();
     
 private:

@@ -51,6 +51,9 @@ public:
     // get methods
     vector<float> getAsVector();
     vector<Parameter> getAsParameters();
+    vector<Parameter> getParametersAsParameters();
+    vector<Parameter> getGainsAsParameters();
+    
     string& getName();
     vector<float>& getMaxSpeeds();
     vector<float>& getMaxAccelerations();

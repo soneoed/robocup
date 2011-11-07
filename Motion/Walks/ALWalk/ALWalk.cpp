@@ -48,7 +48,7 @@ ALWalk::ALWalk(NUSensorsData* data, NUActionatorsData* actions) : NUWalk(data, a
     
     // turn the foot contact protection on
     m_al_param[0] = "ENABLE_FOOT_CONTACT_PROTECTION";
-    m_al_param[1] = true;
+    m_al_param[1] = false;
     m_al_config.arrayPush(m_al_param);
     m_al_motion->setMotionConfig(m_al_config);
     
@@ -99,15 +99,37 @@ void ALWalk::doWalk()
     #if DEBUG_NUMOTION_VERBOSITY > 4
         debug << "ALWalk::doWalk()" << endl;
     #endif
-    vector<float> leggains = m_walk_parameters.getLegGains()[0];
+    int lphase, rphase;
+    m_data->getGaitPhase(NUSensorsData::LFoot, lphase);
+    m_data->getGaitPhase(NUSensorsData::RFoot, rphase);
+    vector<vector<float> > leggains = m_walk_parameters.getLegGains();
+    
+    vector<float> l_leggains;
+    vector<float> r_leggains;
+    if (leggains.size() == 1)
+    {
+        l_leggains = m_walk_parameters.getLegGains()[0];
+        r_leggains = m_walk_parameters.getLegGains()[0];
+    }   
+    else
+    {
+        l_leggains = m_walk_parameters.getLegGains()[lphase];
+        r_leggains = m_walk_parameters.getLegGains()[rphase];
+    }
+    
+    //debug << lphase << ": " << l_leggains << endl;
+    //debug << rphase << ": " << r_leggains << endl;
     if (m_current_time - m_last_enabled_time < 1500)
     {
         float killfactor = (m_current_time - m_last_enabled_time)/1500;
         m_speed_x *= killfactor;
         m_speed_y *= killfactor;
         m_speed_yaw *= killfactor;
-        for (size_t i=0; i<leggains.size(); i++)
-            leggains[i] += leggains[i]*(1-killfactor);
+        for (size_t i=0; i<l_leggains.size(); i++)
+        {
+            l_leggains[i] += l_leggains[i]*(1-killfactor);
+            r_leggains[i] += r_leggains[i]*(1-killfactor);
+        }
     }
     
     #if DEBUG_NUMOTION_VERBOSITY > 4
@@ -145,11 +167,14 @@ void ALWalk::doWalk()
     if (m_data->getBatteryVoltage(voltage))
     {   // this has been hastily ported over from 2009!
         float voltagestablisation = 24.654/voltage;
-        for (size_t i=0; i<leggains.size(); i++)
-            leggains[i] *= voltagestablisation;
+        for (size_t i=0; i<l_leggains.size(); i++)
+        {
+            l_leggains[i] *= voltagestablisation;
+            r_leggains[i] *= voltagestablisation;
+        }
     }
-    m_actions->add(NUActionatorsData::LLeg, m_data->CurrentTime, legnan, leggains);
-    m_actions->add(NUActionatorsData::RLeg, m_data->CurrentTime, legnan, leggains);
+    m_actions->add(NUActionatorsData::LLeg, m_data->CurrentTime, legnan, l_leggains);
+    m_actions->add(NUActionatorsData::RLeg, m_data->CurrentTime, legnan, r_leggains);
     if (m_larm_enabled)
         m_actions->add(NUActionatorsData::LArm, m_data->CurrentTime, armnan, m_walk_parameters.getArmGains()[0]);
     if (m_rarm_enabled)

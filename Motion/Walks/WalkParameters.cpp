@@ -102,17 +102,30 @@ vector<float> WalkParameters::getAsVector()
 vector<Parameter> WalkParameters::getAsParameters()
 {
     vector<Parameter> data;
-    data.reserve(size());
+    vector<Parameter> p = getParametersAsParameters();
+    vector<Parameter> g = getGainsAsParameters();
+    
+    data.insert(data.begin(), p.begin(), p.end());
+    data.insert(data.begin(), g.begin(), g.end());
+    
+    return data;
+}
 
-#ifdef USE_ALWALK       // this is a horrible hack. The ranges for the velocities and accelerations should be put in the walk parameter file...
-    data.push_back(Parameter("Velocity", m_max_speeds[0], 5, 30));
-    data.push_back(Parameter("Velocity", m_max_speeds[1], 2.5, 20));
-    data.push_back(Parameter("Velocity", m_max_speeds[2], 0.5, 2));
-#else
-    data.push_back(Parameter("Velocity", m_max_speeds[0], 5, 60));
-    data.push_back(Parameter("Velocity", m_max_speeds[1], 2.5, 60));
-    data.push_back(Parameter("Velocity", m_max_speeds[2], 0.5, 2));
-#endif
+/*! @brief Gets all of the walk parameters as parameters
+    @return a vector of parameters containing all of the walk parameter related parameters (ie all parameters except for the gains)
+ */
+vector<Parameter> WalkParameters::getParametersAsParameters()
+{
+    vector<Parameter> data;
+    #ifdef USE_ALWALK       // this is a horrible hack. The ranges for the velocities and accelerations should be put in the walk parameter file...
+        data.push_back(Parameter("Velocity", m_max_speeds[0], 5, 30));
+        data.push_back(Parameter("Velocity", m_max_speeds[1], 2.5, 20));
+        data.push_back(Parameter("Velocity", m_max_speeds[2], 0.5, 2));
+    #else
+        data.push_back(Parameter("Velocity", m_max_speeds[0], 5, 60));
+        data.push_back(Parameter("Velocity", m_max_speeds[1], 2.5, 60));
+        data.push_back(Parameter("Velocity", m_max_speeds[2], 0.5, 2));
+    #endif
     
     data.push_back(Parameter("Acceleration", m_max_accelerations[0], 5, 140));
 	data.push_back(Parameter("Acceleration", m_max_accelerations[1], 2.5, 140));
@@ -121,6 +134,15 @@ vector<Parameter> WalkParameters::getAsParameters()
     for (size_t i=0; i<m_parameters.size(); i++)
         data.push_back(m_parameters[i]);
     
+    return data;
+}
+
+/*! @brief Gets all of the gain related parameters as parameters
+    @return a vector of parameters containing all of the gains
+ */
+vector<Parameter> WalkParameters::getGainsAsParameters()
+{
+    vector<Parameter> data;
     for (size_t i=0; i<m_leg_gains.size(); i++)
     {
         for (size_t j=0; j<m_leg_gains[i].size(); j++)
@@ -129,7 +151,6 @@ vector<Parameter> WalkParameters::getAsParameters()
             data.push_back(p);
         }
     }
-    
     return data;
 }
 
@@ -194,10 +215,28 @@ vector<vector<float> >& WalkParameters::getLegGains()
  */
 void WalkParameters::set(const vector<float>& data)
 {
-    if (data.size() < m_max_speeds.size() + m_max_accelerations.size() + m_parameters.size())
-        return;
-    else
-    {
+    // this function is now a little trick to implement
+    // 1. Can have walk parameters but no stiffness
+    // 2. Can have stiffness with no walk parameters
+    // 3. Can have walk parameters and stiffness
+    // 4. Can have stiffness of length 6 or 24
+    // this is a significant amount of combinations. But 99% of the time we can use the size
+    // of the input data to determine which combination it is. There is a problem when there are
+    // exactly 6 or 24 walk parameters.
+    
+    size_t s = data.size();
+    if (s == m_leg_gains.size()*m_leg_gains[0].size())
+    {   // only stiffness
+        size_t offset = 0;
+        for (size_t i=0; i<m_leg_gains.size(); i++)
+        {
+            for (size_t j=0; j<m_leg_gains[i].size(); j++)
+                m_leg_gains[i][j] = data[offset+j];
+            offset += m_leg_gains[i].size();
+        }
+    }
+    else if (s == m_max_speeds.size() + m_max_accelerations.size() + m_parameters.size())
+    {   // only walk parameters
         size_t offset = 0;
         
         for (size_t i=0; i<m_max_speeds.size(); i++)
@@ -207,21 +246,32 @@ void WalkParameters::set(const vector<float>& data)
         for (size_t i=0; i<m_max_accelerations.size(); i++)
             m_max_accelerations[i] = data[i+offset];
         offset += m_max_accelerations.size();
-
+        
+        for (size_t i=0; i<m_parameters.size(); i++)
+            m_parameters[i].set(data[i+offset]);
+        offset += m_parameters.size();
+    }
+    else 
+    {   // both walk parameters and stiffness
+        size_t offset = 0;
+        
+        for (size_t i=0; i<m_max_speeds.size(); i++)
+            m_max_speeds[i] = data[i+offset];
+        offset += m_max_speeds.size();
+        
+        for (size_t i=0; i<m_max_accelerations.size(); i++)
+            m_max_accelerations[i] = data[i+offset];
+        offset += m_max_accelerations.size();
+        
         for (size_t i=0; i<m_parameters.size(); i++)
             m_parameters[i].set(data[i+offset]);
         offset += m_parameters.size();
         
-        if (data.size() < size())               // check if the new parameters includes stiffnesses for the legs, 
-            return;
-        else
+        for (size_t i=0; i<m_leg_gains.size(); i++)
         {
-            for (size_t i=0; i<m_leg_gains.size(); i++)
-            {
-                for (size_t j=0; j<m_leg_gains[i].size(); j++)
-                    m_leg_gains[i][j] = data[offset+j];
-                offset += m_leg_gains[i].size();
-            }
+            for (size_t j=0; j<m_leg_gains[i].size(); j++)
+                m_leg_gains[i][j] = data[offset+j];
+            offset += m_leg_gains[i].size();
         }
     }
 }
