@@ -21,6 +21,8 @@
 
 #include "DarwinWalk.h"
 //using namespace Kinematics;
+//From Darwin Library:
+#include <Walking.h>	//Darwin Controller
 #include "minIni.h"
 #include "MotionStatus.h"
 
@@ -69,7 +71,7 @@ DarwinWalk::DarwinWalk(NUSensorsData* data, NUActionatorsData* actions) :  NUWal
 	Robot::Walking::GetInstance()->LoadINISettings(ini);
 	//Robot::Walking::GetInstance()->SaveINISettings(ini);
 	Robot::Walking::GetInstance()->Initialize();
-	Robot::Walking::GetInstance()->PERIOD_TIME = 500;
+	//Robot::Walking::GetInstance()->PERIOD_TIME = 500;
 	
 	
 }

@@ -92,7 +92,7 @@ void DarwinActionators::copyToHardwareCommunications()
         m_data->summaryTo(debug);
     #endif
     copyToServos();
-    copyToLeds();
+    //copyToLeds();
 	copyToSound();
 }
 

@@ -29,9 +29,10 @@
 #include "Motion/NUWalk.h"
 class NUSensorsData;
 class NUActionatorsData;
-
-//From Darwin Library:
-#include <Walking.h>	//Darwin Controller
+namespace Robot
+{
+    class Walking;
+}
 
 #include <vector>
 #include <fstream>
@@ -48,7 +49,7 @@ public:
 	void updateWalkEngineSensorData();
 
 private:
-	Robot::Walking* DarwinWalkEngine;
+    Robot::Walking* DarwinWalkEngine;
 	void SetDarwinSensor(int,float);
 };
 

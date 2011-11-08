@@ -61,7 +61,7 @@ Behaviour::Behaviour()
     #elif defined(TARGET_IS_CYCLOID)
         m_behaviour = new QuietStanceProvider(this);
     #else
-        m_behaviour = new SoccerProvider(this);
+        m_behaviour = new WalkOptimisationProvider(this);
     #endif
     m_next_behaviour = NULL;
 }

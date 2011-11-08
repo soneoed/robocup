@@ -101,15 +101,7 @@ void DarwinSensors::copyFromHardwareCommunications()
     copyFromJoints();
     copyFromFeet();
 
-	//delete CMdatatable;
-	//READ FROM JOINTS and CONTROL BOARD:
 	result = cm730->BulkRead();
-	/*while(result != Robot::CM730::SUCCESS)
-	{
-		cout << "BulkRead Error: " << result  << " Trying Again"<<endl;
-		result = cm730->BulkRead();
-		//return;
-	}*/
 }
 
 /*! @brief Copys the joint sensor data 
