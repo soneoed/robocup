@@ -67,6 +67,8 @@ WalkOptimisationProvider::WalkOptimisationProvider(Behaviour* manager) : Behavio
     loadWayPoints();
     loadParameters("DarwinWalkStart");
     initOptimiser();
+    
+    debug << m_parameters << endl;
 
     if (not m_optimiser)
         m_log.open((DATA_DIR + "/Optimisation/" + m_parameters.getName() + ".log").c_str(), fstream::out);
@@ -117,7 +119,7 @@ BehaviourState* WalkOptimisationProvider::nextStateCommons()
 		else
 			return m_state;
 	#else
-        if (m_state == m_paused and Platform->getTime() > 10000)
+        if (m_state == m_paused and Platform->getTime() > 3000)
             return m_generate;
         else
             return m_state;
@@ -130,7 +132,13 @@ void WalkOptimisationProvider::doBehaviourCommons()
     if (m_previous_state == m_paused and m_state == m_generate)
         m_jobs->addMotionJob(new WalkParametersJob(m_parameters)); 
 	#ifndef USE_VISION		// if there is no vision then just fix the head in (0,0) position
-		m_jobs->addMotionJob(new HeadJob(0,vector<float>(2,0)));
+        #ifndef TARGET_IS_DARWIN
+            m_jobs->addMotionJob(new HeadJob(0,vector<float>(2,0)));
+        #else
+            vector<float> p(2,0);
+            p[0] = -0.5;
+            m_jobs->addMotionJob(new HeadJob(0,p));
+        #endif
 	#endif
 }
 

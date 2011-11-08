@@ -38,6 +38,7 @@ public:
     vector<string> 	m_servo_names;          //!< the names of the available joints (eg HeadYaw, AnklePitch etc) in the Darwin-OP robot
 	vector<int> 	m_servo_IDs;			//!< Corresponding servo ids to names
 	vector<float> 	m_servo_Offsets;
+    Robot::CM730* cm730;                    //!< the walk engine needs direct access to the cm730, so we will make this public
 
 	//<-Access to Local copy of motor commands:
 	float getMotorGoalPosition(int localArrayIndex);
@@ -49,7 +50,6 @@ protected:
 
 private:
 	Robot::LinuxCM730* linux_cm730;									//!< Darwin Subcontrolller connection
-	Robot::CM730* cm730;
 	vector<float>	m_servo_Goal_Positions;
 	vector<float>	m_servo_Stiffness;
 };

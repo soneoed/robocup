@@ -106,7 +106,7 @@ vector<Parameter> WalkParameters::getAsParameters()
     vector<Parameter> g = getGainsAsParameters();
     
     data.insert(data.begin(), p.begin(), p.end());
-    data.insert(data.begin(), g.begin(), g.end());
+    data.insert(data.end(), g.begin(), g.end());
     
     return data;
 }

@@ -31,6 +31,7 @@ class NUSensorsData;
 class NUActionatorsData;
 namespace Robot
 {
+    class CM730;
     class Walking;
 }
 
@@ -47,10 +48,18 @@ public:
 	void doWalk();
 	void updateActionatorsData();
 	void updateWalkEngineSensorData();
+    void setWalkParameters(const WalkParameters& walkparameters);
+private:
+    void initInitialPosition();
 
 private:
+    Robot::CM730* m_CM730;
     Robot::Walking* DarwinWalkEngine;
 	void SetDarwinSensor(int,float);
+    
+    int m_FBGyroCenter;
+    int m_RLGyroCenter;
+    int m_CalibrationStatus;
 };
 
 #endif

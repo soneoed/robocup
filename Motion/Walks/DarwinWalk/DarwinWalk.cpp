@@ -22,11 +22,13 @@
 #include "DarwinWalk.h"
 //using namespace Kinematics;
 //From Darwin Library:
-#include <Walking.h>	//Darwin Controller
+#include <Walking.h>	
+//#include <LinuxCM730.h>	
 #include "minIni.h"
 #include "MotionStatus.h"
 
 #include "NUPlatform/NUPlatform.h"
+#include "NUPlatform/Platforms/Darwin/DarwinPlatform.h"
 #include "Infrastructure/NUSensorsData/NUSensorsData.h"
 #include "Infrastructure/NUActionatorsData/NUActionatorsData.h"
 
@@ -42,6 +44,9 @@
     #define M_PI 3.1415926535
 #endif
 
+#define GYRO_WINDOW_SIZE    100
+#define MARGIN_OF_SD        2.0
+
 template <class T>
 inline T NORMALISE(T theta){
     return atan2(sin(theta), cos(theta));
@@ -52,40 +57,53 @@ inline T NORMALISE(T theta){
  */
 DarwinWalk::DarwinWalk(NUSensorsData* data, NUActionatorsData* actions) :  NUWalk(data, actions)
 {
-	//Initial Arm Values taken from the walk engine. With Offsets included.
-	float L_arms[] = {-0.29, 0.833+1.5707963, -0.5-1.5707963};
-	float R_arms[] = {0.29, -0.837-1.5707963, 0.5+1.5707963};	
-	float L_legs[] = {0, 0, 0, 0, 0, 0};
-	float R_legs[] = {0, 0, 0, 0, 0, 0};
-	m_initial_larm = vector<float>(L_arms, L_arms + sizeof(L_arms)/sizeof(*L_arms));
-    m_initial_rarm = vector<float>(R_arms, R_arms + sizeof(R_arms)/sizeof(*R_arms));
-
-
-    m_initial_lleg = vector<float>(L_legs, L_legs + sizeof(L_legs)/sizeof(*L_legs));
-    m_initial_rleg = vector<float>(R_legs, R_legs + sizeof(R_legs)/sizeof(*R_legs));
-
-	m_walk_parameters.load("DarwinWalkDefault");
-
-
-	minIni* ini = new minIni("config.ini");
+    m_CM730 = dynamic_cast<DarwinPlatform*>(Platform)->cm730;
+    m_CalibrationStatus = 0;
+	m_FBGyroCenter = 512;
+	m_RLGyroCenter = 512;
+    
+    DarwinWalkEngine = Robot::Walking::GetInstance();
+    minIni* ini = new minIni("config.ini");
 	Robot::Walking::GetInstance()->LoadINISettings(ini);
-	//Robot::Walking::GetInstance()->SaveINISettings(ini);
 	Robot::Walking::GetInstance()->Initialize();
-	//Robot::Walking::GetInstance()->PERIOD_TIME = 500;
-	
-	
+    m_walk_parameters.load("DarwinWalkDefault");
+    
+    initInitialPosition();
 }
 
 /*! @brief Destructor for walk module
  */
 DarwinWalk::~DarwinWalk()
 {
-	delete DarwinWalkEngine;
+}
+
+void DarwinWalk::initInitialPosition()
+{
+    // arm positions can be hard-coded because they never change
+    float L_arms[] = {-0.29, 0.833+1.5707963, -0.5-1.5707963};
+	float R_arms[] = {0.29, -0.837-1.5707963, 0.5+1.5707963};
+    m_initial_larm = vector<float>(L_arms, L_arms + sizeof(L_arms)/sizeof(*L_arms));
+    m_initial_rarm = vector<float>(R_arms, R_arms + sizeof(R_arms)/sizeof(*R_arms));
+    
+    // leg positions need to be taken from the walk engine
+    m_initial_lleg = vector<float>(6,0);
+    m_initial_lleg[0] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_HIP_ROLL);
+    m_initial_lleg[1] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_HIP_PITCH);
+    m_initial_lleg[2] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_HIP_YAW);
+    m_initial_lleg[3] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_KNEE);
+    m_initial_lleg[4] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_ANKLE_ROLL);
+    m_initial_lleg[5] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_L_ANKLE_PITCH);
+    m_initial_rleg = vector<float>(6,0);
+    m_initial_rleg[0] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_HIP_ROLL);
+    m_initial_rleg[1] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_HIP_PITCH);
+    m_initial_rleg[2] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_HIP_YAW);
+    m_initial_rleg[3] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_KNEE);
+    m_initial_rleg[4] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_ANKLE_ROLL);
+    m_initial_rleg[5] = DarwinWalkEngine->m_Joint.GetRadian(Robot::JointData::ID_R_ANKLE_PITCH);
 }
 
 void DarwinWalk::doWalk()
 {
-
 	//SET THE MOTOR POSITIONS IN THE WALK ENGINE:
 	updateWalkEngineSensorData();
 	//TELL THE WALK ENGINE THE NEW COMMAND
@@ -94,10 +112,9 @@ void DarwinWalk::doWalk()
 	else
 		Robot::Walking::GetInstance()->Start();
 
-	vector<float> speeds = m_walk_parameters.getMaxSpeeds();
-	Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE = m_speed_x/speeds[0]*15;
-	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y/speeds[1]*15;
-	Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE = m_speed_yaw/speeds[2]*25;
+	Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE = m_speed_x;        
+	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y;
+	Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE = m_speed_yaw*57.295;       // convert to degrees per second
 
 	//cout << "Walk Commands: " << Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE << " " << Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE << " " << Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE << endl;
 	Robot::Walking::GetInstance()->Process();
@@ -135,23 +152,80 @@ void DarwinWalk::updateWalkEngineSensorData()
 	SetDarwinSensor(Robot::JointData::ID_R_ANKLE_PITCH,		nu_jointpositions[19]);
 
 	//Update walk engine gyro:
-	float VALUETORPS_RATIO = 18.3348;//512/27.925
-	float VALUETOACCEL_RATIO = 0.1304; //512/4*981
-	vector<float> gyro_data(3,0);
-	m_data->get(NUSensorsData::Gyro,gyro_data);
-	Robot::MotionStatus::FB_GYRO = gyro_data[1]*VALUETORPS_RATIO;
-	Robot::MotionStatus::RL_GYRO = gyro_data[0]*VALUETORPS_RATIO;
-
-	//cout << Robot::MotionStatus::FB_GYRO << Robot::MotionStatus::RL_GYRO<< endl;	
-	
-	//Updata WalkEngines Accel Data:
-	vector<float> accel_data(3,0);
-	m_data->get(NUSensorsData::Accelerometer,accel_data);
-	Robot::MotionStatus::FB_ACCEL = accel_data[0]*VALUETOACCEL_RATIO;
-	Robot::MotionStatus::RL_ACCEL = accel_data[1]*VALUETOACCEL_RATIO;
-
-	
+    
+    // The following gyro calibration code comes from the Darwin's MotionManager::Process() function
+    // It is included here to keep the walk engine happy
+    // calibrate gyro sensor
+    if(m_CalibrationStatus == 0 || m_CalibrationStatus == -1)
+    {
+        static int fb_gyro_array[GYRO_WINDOW_SIZE] = {512,};
+        static int rl_gyro_array[GYRO_WINDOW_SIZE] = {512,};
+        static int buf_idx = 0;
+        
+        if(buf_idx < GYRO_WINDOW_SIZE)
+        {
+            if(m_CM730->m_BulkReadData[Robot::CM730::ID_CM].error == 0)
+            {
+                fb_gyro_array[buf_idx] = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_GYRO_Y_L);
+                rl_gyro_array[buf_idx] = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_GYRO_X_L);
+                buf_idx++;
+            }
+        }
+        else
+        {
+            double fb_sum = 0.0, rl_sum = 0.0;
+            double fb_sd = 0.0, rl_sd = 0.0;
+            double fb_diff, rl_diff;
+            double fb_mean = 0.0, rl_mean = 0.0;
+            
+            buf_idx = 0;
+            
+            for(int i = 0; i < GYRO_WINDOW_SIZE; i++)
+            {
+                fb_sum += fb_gyro_array[i];
+                rl_sum += rl_gyro_array[i];
+            }
+            fb_mean = fb_sum / GYRO_WINDOW_SIZE;
+            rl_mean = rl_sum / GYRO_WINDOW_SIZE;
+            
+            fb_sum = 0.0; rl_sum = 0.0;
+            for(int i = 0; i < GYRO_WINDOW_SIZE; i++)
+            {
+                fb_diff = fb_gyro_array[i] - fb_mean;
+                rl_diff = rl_gyro_array[i] - rl_mean;
+                fb_sum += fb_diff * fb_diff;
+                rl_sum += rl_diff * rl_diff;
+            }
+            fb_sd = sqrt(fb_sum / GYRO_WINDOW_SIZE);
+            rl_sd = sqrt(rl_sum / GYRO_WINDOW_SIZE);
+            
+            if(fb_sd < MARGIN_OF_SD && rl_sd < MARGIN_OF_SD)
+            {
+                m_FBGyroCenter = (int)fb_mean;
+                m_RLGyroCenter = (int)rl_mean;
+                m_CalibrationStatus = 1;
+            }
+            else
+            {
+                m_FBGyroCenter = 512;
+                m_RLGyroCenter = 512;
+                m_CalibrationStatus = -1;
+            }
+        }
+    }
+    
+    if(m_CalibrationStatus == 1)
+    {
+        if(m_CM730->m_BulkReadData[Robot::CM730::ID_CM].error == 0)
+        {
+            Robot::MotionStatus::FB_GYRO = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_GYRO_Y_L) - m_FBGyroCenter;
+            Robot::MotionStatus::RL_GYRO = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_GYRO_X_L) - m_RLGyroCenter;
+            Robot::MotionStatus::RL_ACCEL = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_ACCEL_X_L);
+            Robot::MotionStatus::FB_ACCEL = m_CM730->m_BulkReadData[Robot::CM730::ID_CM].ReadWord(Robot::CM730::P_ACCEL_Y_L);
+        }
+    }
 }
+
 void DarwinWalk::SetDarwinSensor(int id, float angle)
 {
 	Robot::Walking::GetInstance()->m_Joint.SetRadian(id,angle);
@@ -202,3 +276,33 @@ void DarwinWalk::updateActionatorsData()
 	return;
 }
 
+
+void DarwinWalk::setWalkParameters(const WalkParameters& walkparameters)
+{
+    debug << walkparameters << endl;
+    NUWalk::setWalkParameters(walkparameters);
+    vector<Parameter>& parameters = m_walk_parameters.getParameters(); 
+    int idx = 0;
+    
+    DarwinWalkEngine->PERIOD_TIME = 1000.0/parameters[idx++].get();       // step frequency (Hz to period in ms)
+    
+    DarwinWalkEngine->Z_MOVE_AMPLITUDE = 10*parameters[idx++].get();      // step height (cm to mm)
+    DarwinWalkEngine->Y_SWAP_AMPLITUDE = 10*parameters[idx++].get();      // step left-right (cm to mm)
+    DarwinWalkEngine->Z_SWAP_AMPLITUDE = 10*parameters[idx++].get();      // swing top-down (cm to mm)
+    
+    DarwinWalkEngine->X_OFFSET = 10*parameters[idx++].get();
+    DarwinWalkEngine->Y_OFFSET = 10*parameters[idx++].get();
+    DarwinWalkEngine->Z_OFFSET = 10*parameters[idx++].get();
+    DarwinWalkEngine->R_OFFSET = parameters[idx++].get();
+    DarwinWalkEngine->P_OFFSET = parameters[idx++].get();
+    DarwinWalkEngine->HIP_PITCH_OFFSET = parameters[idx++].get();
+    DarwinWalkEngine->PELVIS_OFFSET = parameters[idx++].get();
+    
+    DarwinWalkEngine->DSP_RATIO = parameters[idx++].get();
+    DarwinWalkEngine->STEP_FB_RATIO = parameters[idx++].get();
+    
+    DarwinWalkEngine->BALANCE_KNEE_GAIN = parameters[idx++].get();
+    DarwinWalkEngine->BALANCE_ANKLE_PITCH_GAIN = parameters[idx++].get();
+    DarwinWalkEngine->BALANCE_HIP_ROLL_GAIN = parameters[idx++].get();
+    DarwinWalkEngine->BALANCE_ANKLE_ROLL_GAIN = parameters[idx++].get();
+}
