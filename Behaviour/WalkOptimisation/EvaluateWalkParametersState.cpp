@@ -58,7 +58,7 @@ BehaviourState* EvaluateWalkParametersState::nextState()
 		finish();
 		return m_parent->m_generate;
 	}
-	else if (m_time_in_state > 120000 or getting_up)
+	else if (m_time_in_state > 120000 or getting_up or m_parent->singleChestClick())
 		return m_parent->m_generate;
 	else
 		return this;

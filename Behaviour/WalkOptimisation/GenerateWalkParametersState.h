@@ -85,13 +85,14 @@ public:
         m_data->get(NUSensorsData::MotionGetupActive, m_getting_up);
         
         m_current_target_state = getStartPoint();
-        if ((m_parent->stateChanged() and not m_parent->wasPreviousState(m_parent->m_paused)) or (not m_previously_getting_up and m_getting_up and m_time_not_getting_up > 500) or m_time_in_state > 45000)
+        if ((m_parent->stateChanged() and not m_parent->wasPreviousState(m_parent->m_paused)) or (not m_previously_getting_up and m_getting_up and m_time_not_getting_up > 500) or m_time_in_state > 45000 or m_parent->singleChestClick())
         {
             m_parent->tickOptimiser();
             start();
             #if DEBUG_BEHAVIOUR_VERBOSITY > 2
                 debug << "GenerateWalkParametersState::doState(). Start Position: " << m_current_target_state << endl;
             #endif
+            Blackboard->Actions->add(NUActionatorsData::Sound, m_data->CurrentTime, "error1.wav");
         }
         else
         	tick();

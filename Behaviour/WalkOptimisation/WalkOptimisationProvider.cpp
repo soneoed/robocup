@@ -67,8 +67,6 @@ WalkOptimisationProvider::WalkOptimisationProvider(Behaviour* manager) : Behavio
     loadWayPoints();
     loadParameters("DarwinWalkStart");
     initOptimiser();
-    
-    debug << m_parameters << endl;
 
     if (not m_optimiser)
         m_log.open((DATA_DIR + "/Optimisation/" + m_parameters.getName() + ".log").c_str(), fstream::out);
@@ -136,7 +134,7 @@ void WalkOptimisationProvider::doBehaviourCommons()
             m_jobs->addMotionJob(new HeadJob(0,vector<float>(2,0)));
         #else
             vector<float> p(2,0);
-            p[0] = -0.5;
+            p[0] = -0.6;
             m_jobs->addMotionJob(new HeadJob(0,p));
         #endif
 	#endif
