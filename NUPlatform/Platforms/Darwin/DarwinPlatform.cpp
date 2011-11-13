@@ -24,6 +24,10 @@
 #include "DarwinSensors.h"
 #include "DarwinActionators.h"
 
+#include "Infrastructure/NUBlackboard.h"
+#include "Infrastructure/NUSensorsData/NUSensorsData.h"
+#include "Infrastructure/NUActionatorsData/NUActionatorsData.h"
+
 #include "debug.h"
 #include "debugverbositynuplatform.h"
 #include "nubotconfig.h"
@@ -156,6 +160,29 @@ void DarwinPlatform::setMotorStiffness(int localArrayIndex, float targetStiffnes
 		}
 		m_servo_Stiffness[localArrayIndex] = targetStiffness;
 		//cout << m_servo_Stiffness << endl;
+}
+
+/*! @brief Displays the battery's charge and the (dis)charge rate on the NAO's ears
+ */
+bool DarwinPlatform::displayBatteryState()
+{
+    float currenttime = Blackboard->Sensors->CurrentTime;
+    float period = currenttime - m_battery_state_previous_time;
+    
+    // get the battery charge and voltage from the sensor data
+    float voltage;
+    Blackboard->Sensors->getBatteryVoltage(voltage);
+    
+    bool ok = true;
+    if (voltage < 0.95 and currenttime - m_battery_voiced_time > 5000)
+    {
+        Blackboard->Actions->add(NUActionatorsData::Sound, currenttime, "low_battery.wav");
+        m_battery_voiced_time = currenttime;
+        ok = false;
+    }
+    
+    m_battery_state_previous_time = currenttime;
+    return ok;
 }
 
 

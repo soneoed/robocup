@@ -63,8 +63,6 @@ DarwinWalk::DarwinWalk(NUSensorsData* data, NUActionatorsData* actions) :  NUWal
 	m_RLGyroCenter = 512;
     
     DarwinWalkEngine = Robot::Walking::GetInstance();
-    minIni* ini = new minIni("config.ini");
-	Robot::Walking::GetInstance()->LoadINISettings(ini);
 	Robot::Walking::GetInstance()->Initialize();
     m_walk_parameters.load("DarwinWalkDefault");
     
@@ -107,16 +105,17 @@ void DarwinWalk::doWalk()
 	//SET THE MOTOR POSITIONS IN THE WALK ENGINE:
 	updateWalkEngineSensorData();
 	//TELL THE WALK ENGINE THE NEW COMMAND
-	if(m_speed_x==0  && m_speed_y==0  && m_speed_yaw ==0 )
+	if(m_CalibrationStatus <= 0 or (m_speed_x==0  && m_speed_y==0  && m_speed_yaw ==0) )
 		Robot::Walking::GetInstance()->Stop();
 	else
 		Robot::Walking::GetInstance()->Start();
+    
+    float freq = 1.0/m_walk_parameters.getParameters()[0].get();
 
-	Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE = m_speed_x;        
-	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y;
-	Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE = m_speed_yaw*57.295;       // convert to degrees per second
+	Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE = m_speed_x*(2/freq);     // convert to mm per step   
+	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y*(4/freq);     // convert to mm per step
+	Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE = m_speed_yaw*57.295/(2*freq);       // convert to degrees per step
 
-	//cout << "Walk Commands: " << Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE << " " << Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE << " " << Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE << endl;
 	Robot::Walking::GetInstance()->Process();
 
 	//GET THE NEW TARGET POSITIONS FROM THE WALK ENGINE
@@ -245,7 +244,7 @@ void DarwinWalk::updateActionatorsData()
 	nu_nextLeftArmJoints[0] = Robot::Walking::GetInstance()->m_Joint.GetRadian(Robot::JointData::ID_L_SHOULDER_ROLL);
 	nu_nextLeftArmJoints[1] = Robot::Walking::GetInstance()->m_Joint.GetRadian(Robot::JointData::ID_L_SHOULDER_PITCH)+1.5707963;
 	nu_nextLeftArmJoints[2] = Robot::Walking::GetInstance()->m_Joint.GetRadian(Robot::JointData::ID_L_ELBOW);
-
+    
 	m_actions->add(NUActionatorsData::RArm, Platform->getTime(), nu_nextRightArmJoints, armgains[0]);
 	m_actions->add(NUActionatorsData::LArm, Platform->getTime(), nu_nextLeftArmJoints, armgains[0]);
 
@@ -291,9 +290,7 @@ void DarwinWalk::setWalkParameters(const WalkParameters& walkparameters)
     DarwinWalkEngine->Z_SWAP_AMPLITUDE = 10*parameters[idx++].get();      // swing top-down (cm to mm)
     
     DarwinWalkEngine->X_OFFSET = 10*parameters[idx++].get();
-    DarwinWalkEngine->Y_OFFSET = 10*parameters[idx++].get();
     DarwinWalkEngine->Z_OFFSET = 10*parameters[idx++].get();
-    DarwinWalkEngine->R_OFFSET = parameters[idx++].get();
     DarwinWalkEngine->P_OFFSET = parameters[idx++].get();
     DarwinWalkEngine->HIP_PITCH_OFFSET = parameters[idx++].get();
     DarwinWalkEngine->PELVIS_OFFSET = parameters[idx++].get();

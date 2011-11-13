@@ -77,10 +77,10 @@ DarwinActionators::~DarwinActionators()
 }
 void DarwinActionators::InitialiseMotors()
 {
-	for(int i = 0; i < platform->m_servo_IDs.size(); i++)
+	/*for(int i = 0; i < platform->m_servo_IDs.size(); i++)
 	{
 		cm730->WriteByte(platform->m_servo_IDs[i], Robot::MX28::P_TORQUE_ENABLE, 0, 0);
-	}
+	}*/
 }
 
 void DarwinActionators::copyToHardwareCommunications()
@@ -110,7 +110,7 @@ void DarwinActionators::copyToServos()
 	int joint_num = 0;
 
 	//Defaults from data sheet:
-	int P_GAIN = 8;
+	int P_GAIN = 12;
 	int I_GAIN = 0;
 	int D_GAIN = 0;
 	//platform->m_servo_IDs.size()
@@ -150,7 +150,7 @@ void DarwinActionators::copyToServos()
 			}
 			
 			param[n++] = platform->m_servo_IDs[i];
-			param[n++] = P_GAIN;
+			param[n++] = static_cast<int>(32*gains[i]/100.0);
 			param[n++] = I_GAIN;
 			param[n++] = D_GAIN;
 			param[n++] = 0;

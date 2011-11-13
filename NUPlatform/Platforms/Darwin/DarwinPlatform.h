@@ -45,6 +45,8 @@ public:
 	void setMotorGoalPosition(int localArrayIndex, float targetRadians);
 	float getMotorStiffness(int localArrayIndex);
 	void setMotorStiffness(int localArrayIndex, float targetRadians);
+    
+    bool displayBatteryState();
 protected:
 
 
@@ -52,6 +54,9 @@ private:
 	Robot::LinuxCM730* linux_cm730;									//!< Darwin Subcontrolller connection
 	vector<float>	m_servo_Goal_Positions;
 	vector<float>	m_servo_Stiffness;
+    
+    float m_battery_state_previous_time;
+    float m_battery_voiced_time;
 };
 
 #endif

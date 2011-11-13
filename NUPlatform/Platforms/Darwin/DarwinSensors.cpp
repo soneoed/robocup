@@ -127,25 +127,12 @@ void DarwinSensors::copyFromJoints()
 
 	for (size_t i=0; i < platform->m_servo_IDs.size(); i++)
     {
-		
-		//int result = cm730->ReadTable(int(platform->m_servo_IDs[i]),table_start_addr,end_addr,datatable,&error);
-		//if(result != Robot::CM730::SUCCESS)
-		//{
-		//	debug << "Sensor " << platform->m_servo_IDs[i] <<  " failed."<< endl;
-		//	continue;
-		//}	
-
 		addr = int(Robot::MX28::P_PRESENT_POSITION_L);
 		data = cm730->m_BulkReadData[int(platform->m_servo_IDs[i])].ReadWord(addr);
-		//cm730->MakeWord(datatable[addr-start_addr],datatable[addr-start_addr+1]);
 		if(i == 0 || i == 1)
-		{
 			joint[NUSensorsData::PositionId] = -(Value2Radian(data)) + platform->m_servo_Offsets[i];
-		}
 		else
-		{
 			joint[NUSensorsData::PositionId] = Value2Radian(data) + platform->m_servo_Offsets[i];
-		}
 		/*
 		addr = int(Robot::MX28::P_GOAL_POSITION_L);
 		data = cm730->m_BulkReadData[int(platform->m_servo_IDs[i])].ReadWord(addr);
@@ -166,15 +153,10 @@ void DarwinSensors::copyFromJoints()
 		data = cm730->m_BulkReadData[int(platform->m_servo_IDs[i])].ReadByte(addr);
 		//data = int(datatable[addr-start_addr]);
 		joint[NUSensorsData::StiffnessId] = 100*data;
-		
+		*/
 		addr = int(Robot::MX28::P_PRESENT_LOAD_L);
 		data = cm730->m_BulkReadData[int(platform->m_servo_IDs[i])].ReadWord(addr);
-		//data = cm730->MakeWord(datatable[addr-start_addr],datatable[addr+1-start_addr]);
-		joint[NUSensorsData::TorqueId] = data;
-		//<! Current is blank
-		joint[NUSensorsData::AccelerationId] = (joint[NUSensorsData::VelocityId] - m_previous_velocities[i])/delta_t;
-		//<! Copy into m_data
-		*/
+		joint[NUSensorsData::TorqueId] = data*1.262e-3;     // convert to Nm
 
 		//Calculate Speed:
 		joint[NUSensorsData::VelocityId] = (joint[NUSensorsData::PositionId] - m_previous_positions[i])/delta_t;	
@@ -309,9 +291,8 @@ void DarwinSensors::copyFromBattery()
 	
 	int addr = Robot::CM730::P_VOLTAGE;
 	int data  = cm730->m_BulkReadData[int(Robot::CM730::ID_CM)].ReadWord(addr);
-	float battery_percentage = data/120.00 *100.00;
+	float battery_percentage = data/111.0 *100.00;
 	m_data->set(NUSensorsData::BatteryVoltage, m_current_time, battery_percentage); //Convert to percent
-	
 	return;
 }
 
