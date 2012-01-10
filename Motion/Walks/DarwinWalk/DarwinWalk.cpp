@@ -113,7 +113,7 @@ void DarwinWalk::doWalk()
     float freq = 1.0/m_walk_parameters.getParameters()[0].get();
 
 	Robot::Walking::GetInstance()->X_MOVE_AMPLITUDE = m_speed_x*(2/freq);     // convert to mm per step   
-	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y*(4/freq);     // convert to mm per step
+	Robot::Walking::GetInstance()->Y_MOVE_AMPLITUDE = m_speed_y*(5/freq);     // convert to mm per step
 	Robot::Walking::GetInstance()->A_MOVE_AMPLITUDE = m_speed_yaw*57.295/(2*freq);       // convert to degrees per step
 
 	Robot::Walking::GetInstance()->Process();
@@ -252,7 +252,15 @@ void DarwinWalk::updateActionatorsData()
 	static vector<float> nu_nextRightLegJoints(m_actions->getSize(NUActionatorsData::RLeg), 0);
 	static vector<float> nu_nextLeftLegJoints(m_actions->getSize(NUActionatorsData::LLeg), 0);
 
-	vector<vector<float> >& leggains = m_walk_parameters.getLegGains();
+	vector<vector<float> > leggains = m_walk_parameters.getLegGains();
+    // voltage stablise the gains for the legs
+    float voltage;
+    if (m_data->getBatteryVoltage(voltage))
+    {   // this has been hastily ported over from 2009 and the NAO!
+        float voltagestablisation = 110.0/voltage;
+        for (size_t i=0; i<leggains[0].size(); i++)
+            leggains[0][i] *= voltagestablisation;
+    }
 
 	nu_nextRightLegJoints[0] = Robot::Walking::GetInstance()->m_Joint.GetRadian(Robot::JointData::ID_R_HIP_ROLL);
 	nu_nextRightLegJoints[1] = Robot::Walking::GetInstance()->m_Joint.GetRadian(Robot::JointData::ID_R_HIP_PITCH);	
@@ -293,7 +301,6 @@ void DarwinWalk::setWalkParameters(const WalkParameters& walkparameters)
     DarwinWalkEngine->Z_OFFSET = 10*parameters[idx++].get();
     DarwinWalkEngine->P_OFFSET = parameters[idx++].get();
     DarwinWalkEngine->HIP_PITCH_OFFSET = parameters[idx++].get();
-    DarwinWalkEngine->PELVIS_OFFSET = parameters[idx++].get();
     
     DarwinWalkEngine->DSP_RATIO = parameters[idx++].get();
     DarwinWalkEngine->STEP_FB_RATIO = parameters[idx++].get();

@@ -67,7 +67,7 @@ public:
         bool gettingup = false;
         m_data->get(NUSensorsData::MotionGetupActive, gettingup);
 
-        if (difference[0] < 10 and fabs(difference[2]) < 0.2 and not gettingup)
+        if (difference[0] < 15 and fabs(difference[2]) < 0.3 and not gettingup)
         {
         	finish();
             return m_parent->m_evaluate;

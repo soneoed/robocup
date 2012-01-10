@@ -41,6 +41,8 @@
 
 #include <math.h>
 #include <limits>
+#include <numeric>
+#include <boost/circular_buffer.hpp>
 using namespace std;
 
 /*! @brief Default constructor for parent NUSensors class, this will/should be called by children
@@ -364,10 +366,10 @@ void NUSensors::calculateGaitPhase()
     const int SM_SWING = 2;
     const int SM_IMPACT = 3;
     
-    const float STANCE_TO_PUSH = 10;
-    const float PUSH_TO_SWING = 5;
-    const float SWING_TO_IMPACT = 5;
-    const float IMPACT_TO_STANCE = 50;
+    const float STANCE_TO_PUSH = 25;
+    const float PUSH_TO_SWING = 15;
+    const float SWING_TO_IMPACT = 40;
+    const float IMPACT_TO_STANCE = 75;
     
     float lforce, rforce;
     bool walkactive, onground;
@@ -405,10 +407,20 @@ void NUSensors::calculateGaitPhase()
     lforce *= NOMINAL_FORCE/lmean;
     rforce *= NOMINAL_FORCE/rmean;
     
+    /* I also need to filter the lforce and rforce so that they are smoother; making the decision of when to switch much easier
+        I will do this using a simple sliding window filter
+     */
+    /*static boost::circular_buffer<float> lbuffer = boost::circular_buffer<float>(5, 0);
+    static boost::circular_buffer<float> rbuffer = boost::circular_buffer<float>(5, 0);
+    lbuffer.push_back(lforce);
+    lforce = accumulate(lbuffer.begin(), lbuffer.end(), 0.0f)/lbuffer.size();
+    rbuffer.push_back(rforce);
+    rforce = accumulate(rbuffer.begin(), rbuffer.end(), 0.0f)/rbuffer.size();*/
+    
     float percentLeftFoot = 100*lforce/(lforce + rforce);
     float percentRightFoot = 100*rforce/(lforce + rforce);
     
-    if (success and walkactive and onground)
+    if (success and walkactive)
     {   // if I am walking then determine what support mode I am in, based on the previous support mode and sensor feedback
         // do the logic for the left foot
         if (lphase == SM_STANCE)
@@ -473,6 +485,9 @@ void NUSensors::calculateGaitPhase()
         lphase = SM_STANCE;
         rphase = SM_STANCE;
     }
+    
+    //debug << "LGaitPhase: " << lphase << ", " << lforce << ", " << percentLeftFoot << endl;
+    //debug << "RGaitPhase: " << rphase << ", " << rforce << ", " << percentRightFoot << endl;
     
     vector<float> phases(2,0);
     phases[0] = lphase;

@@ -52,7 +52,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#define USE_PGRL            // set this to USE_PGRL, USE_EHCLS or USE_PSO. Define none to use the same parameters repeatedly
+//#define USE_PGRL            // set this to USE_PGRL, USE_EHCLS or USE_PSO. Define none to use the same parameters repeatedly
 #define USE_MO              // set this to use the redundant fitness functions (ie multiple objective)
 #define USE_COST            // set this to either USE_COST or USE_SPEED to use that fitness function. However, this is overruled if USE_MO is defined
 #define USE_WALKPARAMETERS  // define this to use the walk parameters
@@ -65,7 +65,7 @@ WalkOptimisationProvider::WalkOptimisationProvider(Behaviour* manager) : Behavio
     #endif
     loadId();
     loadWayPoints();
-    loadParameters("DarwinWalkStart");
+    loadParameters("ALWalkResult");
     initOptimiser();
 
     if (not m_optimiser)
@@ -134,7 +134,7 @@ void WalkOptimisationProvider::doBehaviourCommons()
             m_jobs->addMotionJob(new HeadJob(0,vector<float>(2,0)));
         #else
             vector<float> p(2,0);
-            p[0] = -0.6;
+            p[0] = -0.7;
             m_jobs->addMotionJob(new HeadJob(0,p));
         #endif
 	#endif

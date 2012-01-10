@@ -183,7 +183,7 @@ bool NAOPlatform::verifySensors()
     
     if (m_bad_ultrasonic_count >= 5)
     {
-        Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Actions->CurrentTime, "error_ultrasonic_sensors.wav");
+        //Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Actions->CurrentTime, "error_ultrasonic_sensors.wav");
         m_bad_ultrasonic_count = 0;
         ok = false;
     }

@@ -899,7 +899,9 @@ bool NUSensorsData::isFallen()
 bool NUSensorsData::isOnGround()
 {
     float lf, rf;
-    if (getEndEffectorData(LFoot, ContactId, lf) and getEndEffectorData(RFoot, ContactId, rf) and (lf > 0 or rf > 0))
+    bool success = getEndEffectorData(LFoot, ContactId, lf);
+    success &= getEndEffectorData(RFoot, ContactId, rf);
+    if (success and (lf > 0 or rf > 0))
         return true;
     else
         return false;

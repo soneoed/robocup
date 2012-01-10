@@ -174,7 +174,7 @@ bool DarwinPlatform::displayBatteryState()
     Blackboard->Sensors->getBatteryVoltage(voltage);
     
     bool ok = true;
-    if (voltage < 0.95 and currenttime - m_battery_voiced_time > 5000)
+    if (voltage < 1.0 and currenttime - m_battery_voiced_time > 5000)
     {
         Blackboard->Actions->add(NUActionatorsData::Sound, currenttime, "low_battery.wav");
         m_battery_voiced_time = currenttime;

@@ -117,7 +117,7 @@ vector<Parameter> WalkParameters::getAsParameters()
 vector<Parameter> WalkParameters::getParametersAsParameters()
 {
     vector<Parameter> data;
-    #ifdef USE_ALWALK       // this is a horrible hack. The ranges for the velocities and accelerations should be put in the walk parameter file...
+    #if defined(USE_ALWALK) or defined(USE_DARWINWALK)       // this is a horrible hack. The ranges for the velocities and accelerations should be put in the walk parameter file...
         data.push_back(Parameter("Velocity", m_max_speeds[0], 5, 30));
         data.push_back(Parameter("Velocity", m_max_speeds[1], 2.5, 20));
         data.push_back(Parameter("Velocity", m_max_speeds[2], 0.5, 2));
@@ -147,7 +147,7 @@ vector<Parameter> WalkParameters::getGainsAsParameters()
     {
         for (size_t j=0; j<m_leg_gains[i].size(); j++)
         {
-            Parameter p("Gain", m_leg_gains[i][j], 25, 100);
+            Parameter p("Gain", m_leg_gains[i][j], 0, 100);
             data.push_back(p);
         }
     }
